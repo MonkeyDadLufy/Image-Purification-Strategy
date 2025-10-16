@@ -32,11 +32,13 @@ The dataset folders are structured in the following way:
 ```
 
 ## Data Preprocessing
-```
+
 Modify the "input_directory" in Image Purification.py to be the parent directory of the gt and lq files in the dataset, 
 and set "output_directory" to the output directory of the dataset after the IP strategy correction.
-Then, run the main function in this file to complete the data preprocessing.
 ```
+$ python Image Purification.py --input_directory [path1] --output_directory [path2]
+```
+
 
 ## FFM Model 
 
