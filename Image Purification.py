@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from tqdm import tqdm
 
-
+T = 0.1
 def detect_black_edges(img, black_threshold=10, min_neighbors=1):
     """黑色边缘检测（与v2.0.py保持一致）"""
     if len(img.shape) == 3:
@@ -43,7 +43,8 @@ def process_pair(lq_path, gt_path, lq_output_dir, gt_output_dir):
     common_mask = common_mask.astype(np.float32) / 255.0
     common_mask = np.expand_dims(common_mask, axis=-1)  # 将形状从 (512, 512) 改为 (512, 512, 1)
     gt_bar = common_mask * lq + (1 - common_mask) * gt
-    lq_bar = common_mask * gt + (1 - common_mask) * lq
+    # lq_bar = common_mask * gt + (1 - common_mask) * lq
+    lq_bar = common_mask * gt + (1 - common_mask) * ( lq * (1 - T) +  gt * T )  # 通过self.T让lq_bar有一点gt的纹理，即π1`略微偏向π0 T取值分别为[0.1,0.2,0.3,0.4]
 
     # 保存结果（保持原始文件名）
     gt_bar_path = os.path.join(gt_output_dir, gt_path.name)
