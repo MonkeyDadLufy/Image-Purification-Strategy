@@ -3,15 +3,31 @@
   
 # A Denoising Framework for Real-World Ultra-Low Dose Lung CT Images Based on an Image Purification Strategy
 </div>
-The strategy for correcting the misaligned data pairs in the real-world ultra-low-dose CT dataset, along with a frequency-domain flow-matching model, and two sets of evaluation metrics.
 
-The official implementation of paper [A Denoising Framework for Real-World Ultra-Low Dose Lung CT Images Based on an Image Purification Strategy](https://arxiv.org/pdf/2510.07492).
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg)](https://pytorch.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Environment
-create a new conda env,
-and run
+This repository contains the official implementation of our paper [A Denoising Framework for Real-World Ultra-Low Dose Lung CT Images Based on an Image Purification Strategy](https://arxiv.org/pdf/2510.07492).
+
+## Overview
+
+Our framework introduces:
+- An innovative Image Purification (IP) strategy for correcting misaligned data pairs in real-world ultra-low-dose CT datasets
+- A frequency-domain flow-matching model for superior denoising performance
+- Comprehensive evaluation metrics for result assessment
+
+## Installation
+
+1. Create and activate a new conda environment:
+```bash
+conda create -n ffm python=3.8
+conda activate ffm
 ```
-$ pip install -r requirements.txt
+
+2. Install required packages:
+```bash
+pip install -r requirements.txt
 ```
 
 
@@ -40,37 +56,81 @@ $ python Image Purification.py --input_directory [path1] --output_directory [pat
 ```
 
 
-## FFM Model 
+## FFM Model Training and Testing
 
 ### Training
-Modify the path where the dataset is placed in FFM.yaml.
 
-```
-$ cd FFM
-$ python main.py --mode train --config configs/FFM.yaml
-```
-
-Detailed training instructions will be updated soon.
-
-### Sampling
-Modify the model storage path and output image path in FFM.yaml
-
-```
-$ python main.py --mode test --config configs/FFM.yaml
+1. Configure the dataset paths in `FFM/configs/FFM.yaml`
+2. Start training:
+```bash
+cd FFM
+python main.py --mode train --config configs/FFM.yaml
 ```
 
-### Model Evaluation
-Modify the "calculate_result_all.py" file, changing "folder1" and "folder2" to represent the reference image folder and the image folder to be evaluated respectively.
-
-```
-$ cd..
-$ python calculate_result_all.py
+For a quick test run, use the smoke test configuration:
+```bash
+python main.py --mode train --config configs/FFM_smoke_3ep.yaml
 ```
 
+### Testing
 
-## Acknowledgement
+1. Update the model path and output directory in `FFM.yaml`
+2. Run inference:
+```bash
+python main.py --mode test --config configs/FFM.yaml
+```
 
-This project is based on [Flow Matching](https://github.com/facebookresearch/flow_matching) and [MDMS](https://github.com/Oliiveralien/MDMS). Thanks for their awesome works.
+### Evaluation
 
-### Contact
-If you have any questions, please feel free to contact me via `onekey029@gmail.com`.
+To evaluate the model performance:
+
+1. Edit `calculate_result_all.py`:
+   - Set `folder1` as the path to ground truth images
+   - Set `folder2` as the path to generated images
+2. Run evaluation:
+```bash
+python calculate_result_all.py
+```
+
+The script will compute and display various metrics including FSIM, SSIM, and more.
+
+
+## Configuration Details
+
+The model behavior can be customized through the following configuration files:
+- `FFM/configs/FFM.yaml`: Main configuration for full training
+- `FFM/configs/FFM_smoke_3ep.yaml`: Quick test configuration with 3 epochs
+
+Key configuration parameters include:
+- Learning rate and batch size
+- Training epochs and validation frequency
+- Data paths and model saving options
+- ODE solver parameters for inference
+
+## Acknowledgements
+
+This project builds upon the following excellent works:
+- [Flow Matching](https://github.com/facebookresearch/flow_matching)
+- [MDMS](https://github.com/Oliiveralien/MDMS)
+
+## License
+
+This project is released under the MIT License.
+
+## Contact
+
+For questions or issues, please:
+- Open an issue on [GitHub](https://github.com/MonkeyDadLufy/Image-Purification-Strategy/issues)
+- Contact via email: `onekey029@gmail.com`
+
+## Citation
+
+If you find this work useful for your research, please consider citing our paper:
+
+```bibtex
+@article{gong2025denoising,
+  title={A Denoising Framework for Real-World Ultra-Low Dose Lung CT Images Based on an Image Purification Strategy},
+  author={Gong, Guoliang and Yu, Man},
+  journal={arXiv preprint arXiv:2510.07492},
+  year={2025}
+}
