@@ -1,0 +1,48 @@
+# Temporary configuration for smoke test (3 epochs)
+training:
+  lr: 0.0001
+  batch_size: 1
+  epochs: 3
+  patch_size: false
+
+  train_dir: "C:/Users/pytorch/Desktop/Dataset/dataset/test_train"
+  val_dir: "C:/Users/pytorch/Desktop/Dataset/dataset/test_val"
+
+  model_save_dir: "./saved/models"
+  model_save_name: "flow_matching_model_smoke"
+
+  val_frequency: 1
+  val_frequency_after_100: 1
+  save_frequency: 1000
+
+inference:
+  ode_steps: 50
+  ode_method: "euler"
+  ode_rtol: 1e-4
+  ode_atol: 1e-5
+  ode_step_size: 0.02
+
+  test_model_path: "./saved/models/flow_matching_model_smoke_final.pth"
+  test_lq_dir: "C:/Users/pytorch/Desktop/Dataset/dataset/test_test/lq"
+  test_output_dir: "saved/output"
+
+data:
+  transform:
+    mean: [0.5, 0.5, 0.5]
+    std: [0.5, 0.5, 0.5]
+
+  dataloader:
+    num_workers: 1
+    pin_memory: true
+    persistent_workers: false
+    prefetch_factor: 1
+    drop_last: true
+
+device:
+  cudnn_benchmark: true
+  seed: 42
+
+comet_ml:
+  api_key: "eEDOoiwzjF6OMzqh4LcGkCCUj"
+  project_name: "Flow Matching Smoke"
+  enabled: false

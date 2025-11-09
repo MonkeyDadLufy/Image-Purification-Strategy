@@ -1,44 +1,44 @@
-# FFM 训练配置
+# FFM Training Configuration
 training:
-  # 训练参数
+  # Training parameters
   lr: 0.0001
   batch_size: 1
   epochs: 200
   patch_size: false
 
-  # 数据路径
-  train_dir: "C:\Users\pytorch\Desktop\Dataset\dataset\test_train"
-  val_dir: "C:\Users\pytorch\Desktop\Dataset\dataset\test_val"
+  # Data paths
+  train_dir: "C:/Users/pytorch/Desktop/Dataset/dataset/test_train"
+  val_dir: "C:/Users/pytorch/Desktop/Dataset/dataset/test_val"
 
-  # 模型保存
-  model_save_dir: "./saved/models"
+  # Model saving
+  model_save_dir: "saved/models"
   model_save_name: "flow_matching_model"
 
-  # 验证设置
-  val_frequency: 5  # 前100个epoch每5个epoch验证一次
-  val_frequency_after_100: 10  # 100个epoch后每10个epoch验证一次
-  save_frequency: 20  # 每20个epoch保存一次模型
+  # Validation settings
+  val_frequency: 5  # Validate every 5 epochs before epoch 100
+  val_frequency_after_100: 10  # Validate every 10 epochs after epoch 100
+  save_frequency: 20  # Save model every 20 epochs
 
 inference:
-  # 推理参数
+  # Inference parameters
   ode_steps: 50
   ode_method: "euler"
   ode_rtol: 1e-4
   ode_atol: 1e-5
   ode_step_size: 0.02
 
-  # 测试路径
-  test_model_path: "/saved/models/flow_matching_model_final.pth"
-  test_lq_dir: "/media/D/ym/dataset/test/lq"
+  # Test paths
+  test_model_path: "saved/models/flow_matching_model_final.pth"
+  test_lq_dir: "C:/Users/pytorch/Desktop/Dataset/dataset/test_test"
   test_output_dir: "saved/output"
 
 data:
-  # 数据预处理
+  # Data preprocessing
   transform:
     mean: [0.5, 0.5, 0.5]
     std: [0.5, 0.5, 0.5]
 
-  # DataLoader 配置
+  # DataLoader configuration
   dataloader:
     num_workers: 1
     pin_memory: true
@@ -47,12 +47,12 @@ data:
     drop_last: true
 
 device:
-  # 设备配置
+  # Device configuration
   cudnn_benchmark: true
   seed: 42
 
 comet_ml:
-  # Comet ML 配置（可选）
+  # Comet ML configuration (optional)
   api_key: "eEDOoiwzjF6OMzqh4LcGkCCUj"
   project_name: "Flow Matching"
   enabled: true
