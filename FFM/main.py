@@ -8,13 +8,13 @@ from tqdm import tqdm
 import time
 import sys
 
-# 标准库导入
+# Standard library imports
 from torchvision import transforms, utils
 from PIL import Image
 from torch.utils import data
 from torch import nn, Tensor
 
-# 导入 flow_matching 相关库
+# Flow matching related imports
 from flow_matching.path.scheduler import CondOTScheduler
 from flow_matching.path import AffineProbPath
 from flow_matching.solver import ODESolver
@@ -24,34 +24,34 @@ from modules.MDMS import DiffusionUNet
 
 
 class FFMConfig:
-    """配置管理类"""
+    """Configuration management class"""
 
     def __init__(self, config_path):
-        # 使用 UTF-8 编码读取 YAML 文件
+        # Read YAML file with UTF-8 encoding
         with open(config_path, 'r', encoding='utf-8') as f:
             self.config = yaml.safe_load(f)
 
-        # 设置设备
+        # Setup device
         self.device = self.setup_device()
 
-        # 训练配置
+        # Training configuration
         self.lr = self.config['training']['lr']
         self.batch_size = self.config['training']['batch_size']
         self.epochs = self.config['training']['epochs']
         self.patch_size = self.config['training']['patch_size']
 
-        # 路径配置
+        # Path configuration
         self.train_dir = self.config['training']['train_dir']
         self.val_dir = self.config['training']['val_dir']
         self.model_save_dir = Path(self.config['training']['model_save_dir'])
         self.model_save_name = self.config['training']['model_save_name']
 
-        # 验证配置
+        # Validation configuration
         self.val_frequency = self.config['training']['val_frequency']
         self.val_frequency_after_100 = self.config['training']['val_frequency_after_100']
         self.save_frequency = self.config['training']['save_frequency']
 
-        # 推理配置
+        # Inference configuration
         self.ode_steps = self.config['inference']['ode_steps']
         self.ode_method = self.config['inference']['ode_method']
         self.ode_rtol = self.config['inference']['ode_rtol']
@@ -61,11 +61,11 @@ class FFMConfig:
         self.test_lq_dir = self.config['inference']['test_lq_dir']
         self.test_output_dir = self.config['inference']['test_output_dir']
 
-        # 其他配置
+        # Other configuration
         self.cudnn_benchmark = self.config['device']['cudnn_benchmark']
         self.seed = self.config['device']['seed']
 
-        # 数据配置
+        # Data configuration
         self.transform_mean = self.config['data']['transform']['mean']
         self.transform_std = self.config['data']['transform']['std']
         self.dataloader_num_workers = self.config['data']['dataloader']['num_workers']
@@ -74,80 +74,80 @@ class FFMConfig:
         self.dataloader_prefetch_factor = self.config['data']['dataloader']['prefetch_factor']
         self.dataloader_drop_last = self.config['data']['dataloader']['drop_last']
 
-        # Comet ML 配置
+        # Comet ML configuration
         self.comet_config = self.config['comet_ml']
 
     def setup_device(self):
-        """设置设备并检查可用性"""
+        """Setup device and check availability"""
         if torch.cuda.is_available():
-            # 检查可用的 GPU 数量
+            # Check number of available GPUs
             num_gpus = torch.cuda.device_count()
-            print(f"检测到 {num_gpus} 个 GPU:")
+            print(f"Detected {num_gpus} GPU(s):")
 
             for i in range(num_gpus):
                 gpu_name = torch.cuda.get_device_name(i)
                 print(f"GPU {i}: {gpu_name}")
 
-            # 自动选择设备
+            # Auto select device
             if num_gpus > 1:
-                # 如果有多个 GPU，使用第一个可用的
+                # If multiple GPUs, use the first available one
                 device = "cuda:0"
             else:
                 device = "cuda:0" if num_gpus > 0 else "cpu"
         else:
             device = "cpu"
-            print("未检测到 CUDA 设备，使用 CPU")
+            print("No CUDA device detected, using CPU")
 
-        print(f"使用设备: {device}")
+        print(f"Using device: {device}")
         return device
 
     def setup_environment(self):
-        """设置训练环境"""
+        """Setup training environment"""
         torch.manual_seed(self.seed)
         if torch.cuda.is_available() and self.cudnn_benchmark:
             torch.backends.cudnn.benchmark = True
-        print(f"最终使用设备: {self.device}")
+        print(f"Final device: {self.device}")
 
 
-# 自定义数据集 x_0:lq  x_1:gt
+# Custom dataset for paired images (x_0: low quality, x_1: ground truth)
 class PairedDataset(data.Dataset):
     def __init__(self, data_dir, transform_mean, transform_std):
         self.gt_dir = os.path.join(data_dir, "gt")
         self.lq_dir = os.path.join(data_dir, "lq")
 
-        # 确保目录存在
+        # Ensure directories exist
         if not os.path.exists(self.gt_dir):
-            raise FileNotFoundError(f"GT目录不存在: {self.gt_dir}")
+            raise FileNotFoundError(f"GT directory not found: {self.gt_dir}")
         if not os.path.exists(self.lq_dir):
-            raise FileNotFoundError(f"LQ目录不存在: {self.lq_dir}")
+            raise FileNotFoundError(f"LQ directory not found: {self.lq_dir}")
 
         self.gt_paths = sorted(Path(self.gt_dir).glob("*.png"))
         self.lq_paths = sorted(Path(self.lq_dir).glob("*.png"))
 
         if len(self.gt_paths) == 0:
-            raise FileNotFoundError(f"在 {self.gt_dir} 中未找到 PNG 文件")
+            raise FileNotFoundError(f"No PNG files found in {self.gt_dir}")
         if len(self.lq_paths) == 0:
-            raise FileNotFoundError(f"在 {self.lq_dir} 中未找到 PNG 文件")
+            raise FileNotFoundError(f"No PNG files found in {self.lq_dir}")
 
-        # 检查文件名是否匹配
+        # Check if filenames match
         gt_names = [p.name for p in self.gt_paths]
         lq_names = [p.name for p in self.lq_paths]
 
         if gt_names != lq_names:
-            print("警告: GT和LQ文件名不完全匹配")
-            # 使用文件名交集
+            print("Warning: GT and LQ filenames do not match completely")
+            # Use filename intersection
             common_names = set(gt_names) & set(lq_names)
             self.gt_paths = [p for p in self.gt_paths if p.name in common_names]
             self.lq_paths = [p for p in self.lq_paths if p.name in common_names]
-            print(f"使用 {len(self.gt_paths)} 对匹配的图像")
+            print(f"Using {len(self.gt_paths)} matched image pairs")
 
-        # 使用更高效的数据预处理
+        # Use more efficient data preprocessing
         self.transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mean=transform_mean, std=transform_std)
         ])
 
-        # 预加载图像路径到内存
+        # Preload image paths to memory
         self.filelist = [p.name for p in self.gt_paths]
 
     def __len__(self):
@@ -171,32 +171,53 @@ class WrappedModel(ModelWrapper):
         return self.model(x, t, **extras)
 
 def save_model(model, path):
-    """保存模型"""
+    """Save model to path"""
     torch.save(model.state_dict(), path)
     print(f"Model saved to {path}")
 
 
 def load_model(path, model, device='cpu'):
-    """加载模型"""
+    """Load model from path"""
     if os.path.exists(path):
-        model.load_state_dict(torch.load(path, map_location=device, weights_only=True))
+        # Safe loading: first load object from disk, then extract state_dict based on common save formats
+        state = torch.load(path, map_location=device)
+
+        # If saved as a checkpoint dict containing state_dict (common format), try to extract
+        if isinstance(state, dict):
+            if 'state_dict' in state:
+                state = state['state_dict']
+            elif 'model' in state:
+                state = state['model']
+
+        # Load state_dict into model
+        try:
+            model.load_state_dict(state)
+        except Exception:
+            # If direct loading fails, try handling key prefixes (e.g., 'module.' from DataParallel)
+            new_state = {}
+            for k, v in state.items():
+                new_key = k.replace('module.', '')
+                new_state[new_key] = v
+            model.load_state_dict(new_state)
+
         model.eval()
         print(f"Model loaded from {path}")
         return model
+
     raise FileNotFoundError(f"No model found at {path}")
 
 
 def create_data_loaders(config):
-    """创建数据加载器"""
-    # 创建数据集
+    """Create data loaders"""
+    # Create datasets
     train_dataset = PairedDataset(config.train_dir, config.transform_mean, config.transform_std)
     val_dataset = PairedDataset(config.val_dir, config.transform_mean, config.transform_std)
 
-    # 创建数据加载器
+    # Create data loaders
     train_loader = DataLoader(
         train_dataset,
         batch_size=config.batch_size,
-        shuffle=True,  # 改为 True 以获得更好的训练效果
+        shuffle=True,  # Set to True for better training
         num_workers=config.dataloader_num_workers,
         pin_memory=config.dataloader_pin_memory,
         persistent_workers=config.dataloader_persistent_workers,
@@ -215,33 +236,33 @@ def create_data_loaders(config):
         drop_last=config.dataloader_drop_last
     )
 
-    print(f"训练集大小: {len(train_dataset)}")
-    print(f"验证集大小: {len(val_dataset)}")
+    print(f"Training set size: {len(train_dataset)}")
+    print(f"Validation set size: {len(val_dataset)}")
 
     return train_loader, val_loader
 
 
 def initialize_model(config):
-    """初始化模型和优化器"""
-    # 初始化模型
+    """Initialize model and optimizer"""
+    # Initialize model
     vf = DiffusionUNet().to(config.device)
 
-    # 初始化路径和优化器
+    # Initialize path and optimizer
     path = AffineProbPath(scheduler=CondOTScheduler())
     optim = torch.optim.Adam(vf.parameters(), lr=config.lr)
 
-    # 创建模型保存目录
+    # Create model save directory
     config.model_save_dir.mkdir(parents=True, exist_ok=True)
 
     return vf, path, optim
 
 
 def upsample_images(config, lq_images, model):
-    """优化后的推理函数"""
+    """Optimized inference function"""
     solver = ODESolver(velocity_model=WrappedModel(model))
     T = torch.linspace(0, 1, config.ode_steps).to(config.device)
 
-    # 确保输入图像有批量维度
+    # Ensure input images have batch dimension
     if lq_images.dim() == 3:
         lq_images = lq_images.unsqueeze(0)
 
@@ -256,12 +277,12 @@ def upsample_images(config, lq_images, model):
 
 
 def train_model(config):
-    """训练模型"""
-    # 初始化模型
+    """Train model"""
+    # Initialize model
     vf, path, optim = initialize_model(config)
     train_loader, val_loader = create_data_loaders(config)
 
-    # 初始化 Comet ML（如果启用）
+    # Initialize Comet ML if enabled
     if config.comet_config['enabled']:
         try:
             from comet_ml import Experiment
@@ -269,14 +290,14 @@ def train_model(config):
                 api_key=config.comet_config['api_key'],
                 project_name=config.comet_config['project_name']
             )
-            print("Comet ML 实验跟踪已启用")
+            print("Comet ML experiment tracking enabled")
         except Exception as e:
-            print(f"Comet ML 初始化失败: {e}")
+            print(f"Comet ML initialization failed: {e}")
             experiment = None
     else:
         experiment = None
 
-    print(f"模型参数量: {round(sum(p.numel() for p in vf.parameters() if p.requires_grad) / 1_000_000, 2)}M")
+    print(f"Model parameters: {round(sum(p.numel() for p in vf.parameters() if p.requires_grad) / 1_000_000, 2)}M")
 
     # 训练循环
     progress_bar = tqdm(range(config.epochs), desc="Training Epochs", position=0, leave=True)
@@ -343,7 +364,7 @@ def train_model(config):
 
 
 def validate_model(config, model, val_loader, epoch, experiment=None):
-    """验证模型"""
+    """Validate model"""
     with torch.no_grad():
         val_start_time = time.time()
         val_loss = 0.0
@@ -356,12 +377,12 @@ def validate_model(config, model, val_loader, epoch, experiment=None):
             x_1 = batch['gt'].to(config.device, non_blocking=True)
             x_0 = batch['lq'].to(config.device, non_blocking=True)
 
-            # 推理
+            # Inference
             sr_tensor = upsample_images(config, x_0, model)
             loss = (sr_tensor - x_1).abs().mean()
             val_loss += loss.item()
 
-            # 记录最后一批数据用于可视化
+            # Record last batch for visualization
             if step == len(val_loader) - 1:
                 val_images = {
                     'lq': (x_0 + 1) * 0.5,
@@ -369,7 +390,7 @@ def validate_model(config, model, val_loader, epoch, experiment=None):
                     'recon': (sr_tensor + 1) * 0.5
                 }
 
-            # 更新进度条
+            # Update progress bar
             val_progress_bar.set_postfix({
                 'val_loss': f'{loss.item():.4f}',
                 'avg_val_loss': f'{val_loss / (step + 1):.4f}',
@@ -381,12 +402,12 @@ def validate_model(config, model, val_loader, epoch, experiment=None):
 
             step += 1
 
-        # 计算平均验证损失
+        # Calculate average validation loss
         avg_val_loss = val_loss / len(val_loader)
         if experiment:
             experiment.log_metric("avg_val_loss", avg_val_loss, epoch=epoch)
 
-        # 保存最后一组图片
+        # Save last batch of images
         if val_images:
             utils.save_image(val_images['lq'], str(config.model_save_dir / f'lq-{epoch}.png'), nrow=6)
             utils.save_image(val_images['gt'], str(config.model_save_dir / f'gt-{epoch}.png'), nrow=6)
@@ -394,18 +415,18 @@ def validate_model(config, model, val_loader, epoch, experiment=None):
 
 
 def test_model(config):
-    """测试模型"""
-    # 初始化模型
+    """Test model"""
+    # Initialize model
     vf = DiffusionUNet().to(config.device)
 
-    # 加载模型
+    # Load model
     load_model(config.test_model_path, vf, config.device)
 
-    # 创建输出目录
+    # Create output directory
     output_dir = Path(config.test_output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # 批量推理
+    # Batch inference
     lq_files = [f for f in os.listdir(config.test_lq_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
 
     transform = transforms.Compose([
@@ -413,7 +434,7 @@ def test_model(config):
         transforms.Normalize(mean=config.transform_mean, std=config.transform_std)
     ])
 
-    print(f"开始处理 {len(lq_files)} 张图像...")
+    print(f"Processing {len(lq_files)} images...")
 
     for filename in tqdm(lq_files, desc="Processing images"):
         lq_path = os.path.join(config.test_lq_dir, filename)
@@ -423,54 +444,54 @@ def test_model(config):
             lq_tensor = transform(lq_img).unsqueeze(0).to(config.device)
             sr_tensor = upsample_images(config, lq_tensor, vf)
 
-            # 后处理
+            # Post-processing
             sr_tensor = sr_tensor.squeeze(0).cpu()
             sr_tensor = (sr_tensor * 0.5 + 0.5).clamp(0, 1)
 
-            # 保存结果
+            # Save results
             output_path = output_dir / filename
             transforms.ToPILImage()(sr_tensor).save(str(output_path))
 
-    print(f"测试完成！结果保存在: {output_dir}")
+    print(f"Testing complete! Results saved to: {output_dir}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description='FFM 训练和推理脚本')
+    parser = argparse.ArgumentParser(description='FFM Training and Inference Script')
     parser.add_argument('--config', type=str, default='configs/FFM.yaml',
-                        help='配置文件路径')
+                        help='Path to configuration file')
     parser.add_argument('--mode', type=str, required=True,
                         choices=['train', 'test', 'train_test'],
-                        help='运行模式: train, test, 或 train_test')
+                        help='Running mode: train, test, or train_test')
     parser.add_argument('--model_path', type=str,
-                        help='测试时指定的模型路径（可选）')
+                        help='Model path for testing (optional)')
 
     args = parser.parse_args()
 
-    # 检查配置文件是否存在
+    # Check if config file exists
     if not os.path.exists(args.config):
-        print(f"错误: 配置文件不存在: {args.config}")
+        print(f"Error: Configuration file not found: {args.config}")
         return
 
     try:
-        # 加载配置
+        # Load configuration
         config = FFMConfig(args.config)
         config.setup_environment()
 
         if args.mode in ['train', 'train_test']:
-            print("开始训练...")
+            print("Starting training...")
             trained_model = train_model(config)
 
         if args.mode in ['test', 'train_test']:
-            print("开始测试...")
+            print("Starting testing...")
 
-            # 如果指定了模型路径，则使用指定的路径
+            # Use specified model path if provided
             if args.model_path:
                 config.test_model_path = args.model_path
 
             test_model(config)
 
     except Exception as e:
-        print(f"程序执行出错: {e}")
+        print(f"Error during execution: {e}")
         import traceback
         traceback.print_exc()
 
