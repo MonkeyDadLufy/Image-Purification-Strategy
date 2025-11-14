@@ -7,8 +7,17 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CUDA](https://img.shields.io/badge/CUDA-11.8-76B900?logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-downloads)
+[![NumPy](https://img.shields.io/badge/NumPy-2.3-blue?logo=numpy&logoColor=white)](https://numpy.org/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.11-5C3EE8?logo=opencv&logoColor=white)](https://opencv.org/)
+[![Anaconda](https://img.shields.io/badge/Anaconda-3-44A833?logo=anaconda&logoColor=white)](https://www.anaconda.com/)
 
 This repository contains the official implementation of our paper [A Denoising Framework for Real-World Ultra-Low Dose Lung CT Images Based on an Image Purification Strategy](https://arxiv.org/pdf/2510.07492).
+
+<div align="center">
+  <img src="assets/motivation.png" alt="Motivation Overview" width="800">
+  <br>
+</div>
 
 ## Overview
 
@@ -47,18 +56,25 @@ The dataset folders are structured in the following way:
 
 ```
 
-## Data Preprocessing
+## 🧹 Data Preprocessing
 
 path1 is the parent directory of the gt and lq files in the dataset, 
 and path2 is the output directory of the dataset after the IP strategy correction.
+
+<div align="center">
+  <img src="assets/Image_Purification.png" alt="Image Purification (IP) Strategy" width="800">
+  <br>
+  <i>Image Purification (IP) workflow</i>
+</div>
+
 ```
 $ python Image Purification.py --input_directory [path1] --output_directory [path2]
 ```
 
 
-## FFM Model Training and Testing
+## 🚀 FFM Model Training and Testing
 
-### Training
+### 🏋️ Training
 
 1. Configure the dataset paths in `FFM/configs/FFM.yaml`
 2. Start training:
@@ -72,7 +88,7 @@ For a quick test run, use the smoke test configuration:
 python main.py --mode train --config configs/FFM_smoke_3ep.yaml
 ```
 
-### Testing
+### 🧪 Testing
 
 1. Update the model path and output directory in `FFM.yaml`
 2. Run inference:
@@ -80,7 +96,7 @@ python main.py --mode train --config configs/FFM_smoke_3ep.yaml
 python main.py --mode test --config configs/FFM.yaml
 ```
 
-### Evaluation
+### 📊 Evaluation
 
 To evaluate the model performance:
 
@@ -95,7 +111,7 @@ python calculate_result_all.py
 The script will compute and display various metrics including FSIM, SSIM, and more.
 
 
-## Configuration Details
+## 🧩 Configuration Details
 
 The model behavior can be customized through the following configuration files:
 - `FFM/configs/FFM.yaml`: Main configuration for full training
@@ -107,23 +123,23 @@ Key configuration parameters include:
 - Data paths and model saving options
 - ODE solver parameters for inference
 
-## Acknowledgements
+## 🙏 Acknowledgements
 
 This project builds upon the following excellent works:
 - [Flow Matching](https://github.com/facebookresearch/flow_matching)
 - [MDMS](https://github.com/Oliiveralien/MDMS)
 
-## License
+## 📄 License
 
 This project is released under the MIT License.
 
-## Contact
+## 📬 Contact
 
 For questions or issues, please:
 - Open an issue on [GitHub](https://github.com/MonkeyDadLufy/Image-Purification-Strategy/issues)
 - Contact via email: `onekey029@gmail.com`
 
-## Citation
+## 📚 Citation
 
 If you find this work useful for your research, please consider citing our paper:
 
