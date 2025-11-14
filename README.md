@@ -58,14 +58,14 @@ The dataset folders are structured in the following way:
 
 ## 🧹 Data Preprocessing
 
-path1 is the parent directory of the gt and lq files in the dataset, 
-and path2 is the output directory of the dataset after the IP strategy correction.
-
 <div align="center">
   <img src="assets/Image_Purification.png" alt="Image Purification (IP) Strategy" width="800">
   <br>
   <i>Image Purification (IP) workflow</i>
 </div>
+
+path1 is the parent directory of the gt and lq files in the dataset, 
+and path2 is the output directory of the dataset after the IP strategy correction.
 
 ```
 $ python Image Purification.py --input_directory [path1] --output_directory [path2]
