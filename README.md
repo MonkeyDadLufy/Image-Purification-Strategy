@@ -110,6 +110,26 @@ python calculate_result_all.py
 
 The script will compute and display various metrics including FSIM, SSIM, and more.
 
+##  Experiment Results
+
+<div align="center">
+  <figure>
+    <img src="assets/visual_comparision_1.jpg" alt="Visual Comparison 1" width="800">
+    <figcaption>Fig.1: Comparison of visual quality by different denoising methods on one ultra-low-dose CT image from our Patient dataset.</figcaption>
+  </figure>
+  <br>
+  <figure>
+    <img src="assets/visual_comparision_2.jpg" alt="Visual Comparison 2" width="800">
+    <figcaption>Fig.2: Comparison of visual quality by different denoising methods on one ultra-low-dose CT image from our Patient dataset.</figcaption>
+  </figure>
+  <br>
+  <figure>
+    <img src="assets/visual_comparision_3.jpg" alt="Visual Comparison 3" width="800">
+    <figcaption>Fig.3: Comparison of visual quality by different denoising methods on one ultra-low-dose CT image from our Patient dataset.</figcaption>
+  </figure>
+</div>
+
+
 
 ## 🧩 Configuration Details
 
